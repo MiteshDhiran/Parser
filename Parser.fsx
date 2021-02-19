@@ -1,4 +1,4 @@
-//https://www.youtube.com/watch?v=RDalzi7mhdY
+
 open System
 type Result<'a> =
     | Success of 'a
@@ -155,7 +155,7 @@ let many1 parser =
                 let values =  firstValue1 :: subsequentValues
                 Success(values,remainingInput)
     Parser innerFn
-                    
+
 let many1Custom parser =
     let rec innerFn input =
           let (valueArray, remaining) =  parseZeroOrMore parser input
