@@ -126,7 +126,7 @@ let pString str =
 
 let rec parseZeroOrMore parser input =
     //run the parser with input
-    let firstResult = run parser inputABC
+    let firstResult = run parser input
     match firstResult with
     | Success (firstValue,remaining1) -> 
             let (subsequentValues,remainingInput) 
@@ -136,12 +136,36 @@ let rec parseZeroOrMore parser input =
     | Failure err ->
         ([],input)
 
+(* let rec parseZeroOrMoreNew parser input =
+    //run the parser with input
+    let firstResult = run parser input
+    match firstResult with
+    | Success (firstValue,remaining1) -> 
+            let (subsequentValues,remainingInput) 
+                = parseZeroOrMoreNew parser remaining1
+            let values = firstValue :: subsequentValues
+            (values,remainingInput)     
+    | Failure err ->
+        ([],input) *)
 //matches zero or more occurence of a given parser
 let many parser =
     let rec innerFn input =
         //parse the input - wrap in success as its always successfull
         Success (parseZeroOrMore parser input)
     Parser innerFn
+
+(* let many1New parser =
+    let rec innerFn input =
+        let firstResult = run parser input
+        match firstResult with
+        | Failure err -> 
+            Failure err
+        | Success (firstValue1,remainingValue1) ->
+                let (subsequentValues,remainingInput) 
+                    = parseZeroOrMoreNew parser remainingValue1
+                let values =  firstValue1 :: subsequentValues
+                Success(values,remainingInput)
+    Parser innerFn *)
 
 let many1 parser =
     let rec innerFn input =
@@ -156,7 +180,7 @@ let many1 parser =
                 Success(values,remainingInput)
     Parser innerFn
 
-let many1Custom parser =
+(* let many1Custom parser =
     let rec innerFn input =
           let (valueArray, remaining) =  parseZeroOrMore parser input
           if valueArray.Length > 0 then
@@ -177,7 +201,42 @@ let manyOld p =
                                             
         innermostFun input []
         
-    Parser innerFn
+    Parser innerFn *)
 
 let whitespaceCharP = anyOf [' ';'\t';'\n']    
-let whitespace = many whitespaceCharP
+let whitespace = many1 whitespaceCharP
+let inputWithWhiteSpace = "        Hello"
+//let res = run whitespace "    123"
+let res1 = run whitespace inputWithWhiteSpace
+(* let whitespaceNew = many1New whitespaceCharP
+let resNew = run  whitespaceNew inputWithWhiteSpace
+ *)
+// let rec parseZeroOrMoreNew parser input =
+//     //run the parser with input
+//     let firstResult = run parser input
+//     match firstResult with
+//     | Success (firstValue,remaining1) -> 
+//             let (subsequentValues,remainingInput) 
+//                 = parseZeroOrMoreNew parser remaining1
+//             let values = firstValue :: subsequentValues
+//             (values,remainingInput)     
+//     | Failure err ->
+//         ([],input)
+
+// let many11 parser =
+//     let rec innerFn input =
+//         let firstResult = run parser input
+//         match firstResult with
+//         | Failure err -> 
+//             Failure err
+//         | Success (firstValue1,remainingValue1) ->
+//                 let (subsequentValues,remainingInput) 
+//                     = parseZeroOrMoreNew parser remainingValue1
+//                 let values =  firstValue1 :: subsequentValues
+//                 Success(values,remainingInput)
+//     Parser innerFn
+
+// let inputWithWhiteSpace = "        Hello"        
+// let whitespace11 = many11 whitespaceCharP
+// let res2 = parseZeroOrMoreNew whitespace11 inputWithWhiteSpace
+// let res3 = parseZeroOrMoreNew whitespace inputWithWhiteSpace
