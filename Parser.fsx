@@ -1,10 +1,38 @@
-
 open System
 type Result<'a> =
     | Success of 'a
     | Failure of string
 
+type ParserLabel = string
+
+type ParserWithLabel<'a> = 
+    {
+        ParseFn : (string -> Result<'a * string>)
+        Label:  ParserLabel 
+    }
+
 type Parser<'a> = Parser of (string -> Result<'a * string>)
+
+(* let setLabel parser label =
+    let inputFn input = 
+        let (Parser paserFn) = parser
+        let res = parserFn input
+        match res with
+        | Failure err ->  
+ *)
+
+let satisfy predicate =
+    let innerFn input =
+        if String.IsNullOrEmpty(input) then
+            Failure "No More Input"
+        else 
+            let first = input.[0]
+            if predicate first then
+                Success (first,input.[1..])
+            else
+                let err = sprintf($"Unexpected {first}")
+                Failure err
+    Parser innerFn                
 
 let pchar charToMatch =
     let innerFn input = 
@@ -85,6 +113,9 @@ let orElse firstParser secondParser =
 //orThen
 let (<|>) = orElse
  
+let (>>%) p x =
+    p |>> (fun _ -> x)
+
 let mapP f p = 
     let innerFunc input = 
         let result = run p input
@@ -136,36 +167,12 @@ let rec parseZeroOrMore parser input =
     | Failure err ->
         ([],input)
 
-(* let rec parseZeroOrMoreNew parser input =
-    //run the parser with input
-    let firstResult = run parser input
-    match firstResult with
-    | Success (firstValue,remaining1) -> 
-            let (subsequentValues,remainingInput) 
-                = parseZeroOrMoreNew parser remaining1
-            let values = firstValue :: subsequentValues
-            (values,remainingInput)     
-    | Failure err ->
-        ([],input) *)
 //matches zero or more occurence of a given parser
 let many parser =
     let rec innerFn input =
         //parse the input - wrap in success as its always successfull
         Success (parseZeroOrMore parser input)
     Parser innerFn
-
-(* let many1New parser =
-    let rec innerFn input =
-        let firstResult = run parser input
-        match firstResult with
-        | Failure err -> 
-            Failure err
-        | Success (firstValue1,remainingValue1) ->
-                let (subsequentValues,remainingInput) 
-                    = parseZeroOrMoreNew parser remainingValue1
-                let values =  firstValue1 :: subsequentValues
-                Success(values,remainingInput)
-    Parser innerFn *)
 
 let many1 parser =
     let rec innerFn input =
@@ -180,63 +187,70 @@ let many1 parser =
                 Success(values,remainingInput)
     Parser innerFn
 
-(* let many1Custom parser =
-    let rec innerFn input =
-          let (valueArray, remaining) =  parseZeroOrMore parser input
-          if valueArray.Length > 0 then
-             Success (valueArray, remaining)
-          else
-             Failure "Not a single match found"
-    Parser innerFn            
-
-//let many p = 
-let manyOld p =
-    let innerFn input =
-        let rec innermostFun inputValue agg =
-                let result1 = run p inputValue
-                match result1 with
-                        | Success (value1,remaining1) -> innermostFun remaining1 (value1 @ agg) 
-                        | Failure err ->
-                                    Failure err
-                                            
-        innermostFun input []
-        
-    Parser innerFn *)
 
 let whitespaceCharP = anyOf [' ';'\t';'\n']    
 let whitespace = many1 whitespaceCharP
 let inputWithWhiteSpace = "        Hello"
 //let res = run whitespace "    123"
 let res1 = run whitespace inputWithWhiteSpace
-(* let whitespaceNew = many1New whitespaceCharP
-let resNew = run  whitespaceNew inputWithWhiteSpace
- *)
-// let rec parseZeroOrMoreNew parser input =
-//     //run the parser with input
-//     let firstResult = run parser input
-//     match firstResult with
-//     | Success (firstValue,remaining1) -> 
-//             let (subsequentValues,remainingInput) 
-//                 = parseZeroOrMoreNew parser remaining1
-//             let values = firstValue :: subsequentValues
-//             (values,remainingInput)     
-//     | Failure err ->
-//         ([],input)
 
-// let many11 parser =
-//     let rec innerFn input =
-//         let firstResult = run parser input
-//         match firstResult with
-//         | Failure err -> 
-//             Failure err
-//         | Success (firstValue1,remainingValue1) ->
-//                 let (subsequentValues,remainingInput) 
-//                     = parseZeroOrMoreNew parser remainingValue1
-//                 let values =  firstValue1 :: subsequentValues
-//                 Success(values,remainingInput)
-//     Parser innerFn
+let (.>>) parser1 parser2 =
+    let innerFn input = 
+        let result = run (parser1 .>>. parser2) input
+        match result with
+        | Success ((f,s), remaining) -> Success(f,remaining) 
+        | Failure err -> Failure err
+    Parser innerFn
 
-// let inputWithWhiteSpace = "        Hello"        
-// let whitespace11 = many11 whitespaceCharP
-// let res2 = parseZeroOrMoreNew whitespace11 inputWithWhiteSpace
-// let res3 = parseZeroOrMoreNew whitespace inputWithWhiteSpace
+let (>>.) parser1 parser2 =
+    let innerFn input = 
+        let result = run (parser1 .>>. parser2) input
+        match result with
+        | Success ((f,s), remaining) -> Success(s,remaining) 
+        | Failure err -> Failure err
+    Parser innerFn    
+
+let between p1 p2 p3 = p1 >>. p2 .>> p3  
+
+let digit = anyOf ['0'..'9']
+let digits = many1 digit
+let pInt = many1 (digit) 
+//let pint = digit |>> string |>> Convert.ToInt64
+//example 
+let doubleQuote = pchar '"'
+let doubleQuotedInt = between doubleQuote pInt doubleQuote
+
+let returnP x = 
+    let innerFn input =
+        Success(x,input)
+    Parser innerFn
+
+//parse one or more occurences of p seperated by sep
+let sepBy1 p sep = 
+    let sepThenP = sep >>. p
+    p .>>. many sepThenP
+    |>> fun (p, pList) -> p::pList 
+
+//parse zero or more occurences of p seperated by sep
+let sepBy p sep = 
+    sepBy1 p sep <|> returnP []
+
+let pInt =
+    //helper function
+    let resultToInt digitList = 
+        String(List.toArray digitList) |> int
+    //map digits to an int
+    digits 
+    |>> resultToInt
+
+
+let comma = pchar ','
+let oneOrMoreDigitList = sepBy1 digit comma      
+//example
+let digitListResult = run (sepBy1 pInt comma) "12,34"
+
+//https://swlaschin.gitbooks.io/fsharpforfunandprofit/content/posts/understanding-parser-combinators-4.html
+//https://www.youtube.com/watch?v=RDalzi7mhdY&t=1682s
+//https://swlaschin.gitbooks.io/fsharpforfunandprofit/content/posts/understanding-parser-combinators-3.html
+//fParsec - http://www.quanttec.com/fparsec/reference/primitives.html#members.attempt
+    
