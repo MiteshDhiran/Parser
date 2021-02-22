@@ -187,6 +187,7 @@ let many1 parser =
                 Success(values,remainingInput)
     Parser innerFn
 
+let testAndThenInput = "$ABC$"
 
 let whitespaceCharP = anyOf [' ';'\t';'\n']    
 let whitespace = many1 whitespaceCharP
