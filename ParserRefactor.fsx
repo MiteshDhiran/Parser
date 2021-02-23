@@ -191,7 +191,7 @@ let returnP x =
     // return the inner function
     {ParseFn=innerFn; Label=label}
 
-/// apply a function to the value inside a parser
+/// apply a function to the value inside a parser . f => 'a -> 'b. This returns Parser<'a> -> Parser<'b>
 let mapP f = 
     bindP (f >> returnP)
 
@@ -199,7 +199,7 @@ let mapP f =
 /// infix version of mapP
 let ( <!> ) = mapP
 
-/// "piping" version of mapP
+/// "piping" version of mapP. Parser<'a> -> fun 'a -> 'b -> Parser<'b>
 let ( |>> ) x f = mapP f x
 
 /// apply a wrapped function to a wrapped value
@@ -216,9 +216,10 @@ let applyP1 fP xP =
     bindP (fun f -> 
     xP >>= (fun x ->  (f x) |> returnP )) fP
 
- let applyP11 fP xP =         
+ (* let applyP11 fP xP =         
     bindP (fun f -> bindP (fun x ->  (f x) |> returnP ) xP) fP    
-
+ *)
+ 
 /// lift a two parameter function to Parser World
 let lift2 f xP yP =
     returnP f <*> xP <*> yP    
