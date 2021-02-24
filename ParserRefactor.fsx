@@ -317,6 +317,19 @@ let many1 p =
         returnP (head::tail) ))
     <?> label        
 
+let many1New parser =
+    let rec innerFn input =
+        let firstResult = runOnInput parser input
+        match firstResult with
+        | Failure (l,e,p) -> 
+            Failure (l,e,p)
+        | Success (firstValue1,remainingValue1) ->
+                let (subsequentValues,remainingInput) 
+                    = parseZeroOrMore parser remainingValue1
+                let values =  firstValue1 :: subsequentValues
+                Success(values,remainingInput)
+    {ParseFn=innerFn;Label=""}
+
 /// Parses an optional occurrence of p and returns an option value.
 let opt p = 
     let label = sprintf "opt %s" (getLabel p)
