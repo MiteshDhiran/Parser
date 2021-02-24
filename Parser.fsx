@@ -252,6 +252,28 @@ let oneOrMoreDigitList = sepBy1 digit comma
 //example
 let digitListResult = run (sepBy1 pInt comma) "12,34"
 
+let chars  = many (satisfy (fun c -> not (c = '*' || c = '~' )))
+
+let getCharToStringExeptSep exceptCharArry = 
+    let validCharsFn  (ch:char) = not (Array.Exists(exceptCharArry, fun c -> ch = c))
+    many (satisfy validCharsFn)
+
+let charsExcept exceptChars =
+    let charNot ch carray =   not (Array.Exists(carray, fun c -> ch = c))
+    many (satisfy (fun ch -> charNot ch exceptChars))
+
+let pCharsToStringExcept exceptChars=
+    let resultToString chars = 
+        String(List.toArray chars) 
+    getCharToStringExeptSep  exceptChars
+    |>> (List.toArray >> String) 
+
+
+let fieldParser = pCharsToStringExcept [|'~';'*'|]
+
+run fieldParser "123aA~"
+//let carray = ['*','~']
+  
 //https://swlaschin.gitbooks.io/fsharpforfunandprofit/content/posts/understanding-parser-combinators-4.html
 //https://www.youtube.com/watch?v=RDalzi7mhdY&t=1682s
 //https://swlaschin.gitbooks.io/fsharpforfunandprofit/content/posts/understanding-parser-combinators-3.html
