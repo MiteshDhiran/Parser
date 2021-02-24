@@ -113,8 +113,7 @@ let orElse firstParser secondParser =
 //orThen
 let (<|>) = orElse
  
-let (>>%) p x =
-    p |>> (fun _ -> x)
+
 
 let mapP f p = 
     let innerFunc input = 
@@ -127,6 +126,9 @@ let mapP f p =
             Success(funResult,remaining1)
     Parser innerFunc
 let (|>>) p f = mapP f p 
+
+let (>>%) p x =
+    p |>> (fun _ -> x)
 
 let choice listOfParser =
     listOfParser |> List.reduce (<|>)
@@ -215,11 +217,11 @@ let between p1 p2 p3 = p1 >>. p2 .>> p3
 
 let digit = anyOf ['0'..'9']
 let digits = many1 digit
-let pInt = many1 (digit) 
-//let pint = digit |>> string |>> Convert.ToInt64
+
+
 //example 
 let doubleQuote = pchar '"'
-let doubleQuotedInt = between doubleQuote pInt doubleQuote
+
 
 let returnP x = 
     let innerFn input =
