@@ -266,14 +266,41 @@ let pCharsToStringExcept exceptChars=
     getCharToStringExeptSep  exceptChars
     |>> (List.toArray >> String) 
 
+//Newly created
+
+let pStringBeforeString (beforeStr:string)  =
+        let innerFn input =
+            if String.IsNullOrEmpty(input) then
+                Failure "No More Input..."
+            else
+                let index  = input.IndexOf(beforeStr)
+                if (index  >= 0) then
+                    Success((input.Substring(0,index)),(input.Substring(index,(input.Length - index)))) 
+                else
+                   let msg = sprintf "Expecting %s in %s" beforeStr input
+                   Failure msg
+        Parser innerFn        
+
+//Concatinate string
+let (^) l r = sprintf "%s%s" l r
+
 
 let fieldParser =  (pCharsToStringExcept [|'~';'*'|] .>> anyOf ['~';'*']) <|> (pCharsToStringExcept [|'~';'*'|]) 
 
-run fieldParser "123aA~BBB"
+let fieldParserNew = sepBy1 (pCharsToStringExcept [|'~';'*'|])  (anyOf ['~';'*'])
+run fieldParserNew "123aA*BBB"
+
+let allLines = System.IO.File.ReadLines(@"C:\Users\MDHIRAN\source\repos\Parser\Sample835.txt")
+printf "Hello world"
+//Parsing 835
+//Get all segments in sequence
+//Itentify repeat segment
 
   
 //https://swlaschin.gitbooks.io/fsharpforfunandprofit/content/posts/understanding-parser-combinators-4.html
 //https://www.youtube.com/watch?v=RDalzi7mhdY&t=1682s
 //https://swlaschin.gitbooks.io/fsharpforfunandprofit/content/posts/understanding-parser-combinators-3.html
 //fParsec - http://www.quanttec.com/fparsec/reference/primitives.html#members.attempt
-    
+//835 sample - https://x12.org/examples/005010x221/example-2-multiple-claims-single-check    
+//835 Tree structure - https://www.xtranslator.com/prod/beginguidex12.pdf
+//Repeating loops ISA-IEE, GS-GE, ST-SE
